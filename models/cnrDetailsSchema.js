@@ -2,15 +2,15 @@ const mongoose = require("mongoose");
 
 const cnrDetailsSchema = new mongoose.Schema(
   {
-    cnrNumber: { type: String, required: true, unique: true },
-    cnrDetails: { type: mongoose.Schema.Types.Mixed, required: true },
+    cnrNumber: { type: String, unique: true },
+    cnrDetails: { type: mongoose.Schema.Types.Mixed },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
-    userID: {
+    userIDs: [{
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'User',
       required: true,
-    },
+    }],
   },
   { timestamps: false }
 );

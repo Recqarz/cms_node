@@ -8,7 +8,7 @@ getAllCnrDetails.get("/getCnrDetails/:userID", async(req, res) => {
     try{
 
         const cnrDetails = await cnrDetailsCollection.find({
-            userID: userID,
+            userIDs: userID,
           });
       
           console.log("cnrDetails:", cnrDetails)

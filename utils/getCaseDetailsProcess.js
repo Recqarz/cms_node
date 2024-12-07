@@ -62,7 +62,7 @@ const extractTableData = async (page, tableSelector, isObject = false, isSingleR
   try {
     // Wait for the table element to appear on the page
     const table = await retryWithDelay(async () => {
-      await page.waitForSelector(tableSelector, { timeout: 10000 });
+      await page.waitForSelector(tableSelector, { timeout: 6000 });
       return await page.$(tableSelector);
     }).catch(() => null);
 
@@ -159,7 +159,7 @@ function delay(time) {
 
 const getCaseDetailsProcess = async (cnrNumber) => {
   const browser = await puppeteer.launch({
-    headless: true, // for deploy
+    headless: false, // for deploy
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
@@ -211,8 +211,21 @@ const getCaseDetailsProcess = async (cnrNumber) => {
       const details = {};
       const LinkArr = []
 
+      await delay(3000); // Wait for 3 seconds
+
+      const isInvalidCaptcha = await page.evaluate(() => {
+        const errorModal = document.querySelector("#validateError");
+        const errorMessage = errorModal ? errorModal.innerText : "";
+        return errorMessage.includes("Invalid Captcha...");
+      });
+
+      if (isInvalidCaptcha) {
+        console.error("Invalid Captcha.");
+        return { status: false, message: "Invalid Captcha" };
+      }
+
       const caseDetailsTable = await retryWithDelay(async () => {
-        await page.waitForSelector("table.case_details_table", { timeout: 9000 });
+        await page.waitForSelector("table.case_details_table", { timeout: 6000 });
         return await page.$("table.case_details_table");
       }).catch(() => null);
 
@@ -234,7 +247,59 @@ const getCaseDetailsProcess = async (cnrNumber) => {
           }
         }
       } else {
-        console.warn("Case Details table not found.");
+        const tableSelector = "table.table";
+        await page.waitForSelector(tableSelector, { timeout: 5000 });
+
+        // Check if "Case Code" exists in the <th> tags of the table
+        const hasCaseCode = await page.evaluate((tableSelector) => {
+          const table = document.querySelector(tableSelector);
+          if (!table) return false;
+
+          // Check all <th> tags inside the table
+          return Array.from(table.querySelectorAll("th")).some((th) =>
+            th.textContent.trim().includes("Case Code")
+          );
+        }, "table.table");
+
+        if (hasCaseCode) {
+          const caseDetails = await extractTableDataCase2(
+            page,
+            "#history_cnr > table.table:first-of-type"
+          );
+          const acts = await extractTableData(
+            page,
+            "table.Acts_table",
+            false,
+            false
+          );
+
+          const petitionerAdvocate = await extractTableData(
+            page,
+            "#history_cnr > table.table:nth-of-type(2)",
+            false,
+            true
+          );
+
+          let petitioner = [];
+          petitioner.push(petitionerAdvocate[0]);
+          let respondent = [];
+          respondent.push(petitionerAdvocate[2]);
+
+          const res = {
+            status: true,
+            Acts: acts,
+            "Case Details": caseDetails,
+            "Case History": {},
+            "Case Status": {},
+            "FIR Details": [],
+            "Petitioner and Advocate": petitioner,
+            "Respondent and Advocate": respondent,
+            Links: LinkArr,
+            cnr_number: cnrNumber,
+          };
+
+          return res;
+        }
         return { status: false, message: "Case Details table not found." };
       }
 
@@ -249,11 +314,11 @@ const getCaseDetailsProcess = async (cnrNumber) => {
 
       console.log("Links for order table to load...");
       try {
-        await page.waitForSelector(".order_table", { timeout: 50000 });
+        await page.waitForSelector(".order_table", { timeout: 10000 }); // 10 sec for order sheet
       } catch (err) {
         console.error("Error: Timeout waiting for order table", err);
         await page.screenshot({ path: "error_screenshot.png" });
-        LinkArr.push("Order Sheet not found !")
+        // LinkArr.push("Order Sheet not found !")
       }
 
       const rows = await page.$$eval(".order_table tr", (rows) =>
@@ -261,7 +326,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
       );
 
       if (rows.length <= 1){
-        LinkArr.push("Order Sheet not found !")
+        // LinkArr.push("Order Sheet not found !")
         console.log("No orders found for the provided CNR number")
       }
         // throw new Error("No orders found for the provided CNR number.");
@@ -363,7 +428,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
         }
       }
 
-      console.log("LinkArr:::::", LinkArr)
+      // console.log("LinkArr:::::", LinkArr)
 
       const res = {
         status: true,

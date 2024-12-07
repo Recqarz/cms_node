@@ -33,43 +33,32 @@ crawlerRoute.post("/crawler/caseDetails", async (req, res) => {
 
     console.log("isCnrNumberFound:", isCnrNumberFound)
     if(isCnrNumberFound){
-      return res.status(200).json({
+
+      if(!isCnrNumberFound.userIDs.includes(userID)){
+        isCnrNumberFound.userIDs.push(userID)
+        await isCnrNumberFound.save();
+      }else{
+        return res.status(200).json({
+          status: true,
+          message: `CNR details already uploaded : ${cnr_number}`,
+        });
+      }
+
+    return res.status(200).json({
         status: true,
-        message: `Cnr details already exists for : ${cnr_number}`,
+        message: `Access granted to CNR details for : ${cnr_number}`,
       }); 
-    }
+    }else{
+
+   
 
     const result = await getCaseDetailsProcess(cnr_number);
-
-    // if(result.status === true){
-    //   const savedCnrDetails = new cnrDetailsCollection({
-    //     cnrNumber: result.cnr_number,
-    //     cnrDetails: result,
-    //     userID: userID
-    //   })
-    //   await savedCnrDetails.save();
-
-    //   res.status(201).json({staus:true, message:`Details saved for : ${result.cnr_number}`, savedData: result})
-    // }
-    // else{
-    //   const isCnrNumberFound = await cnrDetailsCollection.find({cnrNumber:cnr_number });
-
-    //   if(!isCnrNumberFound){
-    //     const saveUnsavedCnrNumber =  new UnsaveCnrCollection({
-    //       cnrNumber: cnr_number
-    //     })
-
-    //     await saveUnsavedCnrNumber.save();
-    //     res.status(201).json({staus:true, message:`Unsaved cnr number added : ${result.cnr_number}`, savedData: result})
-    //   }
-
-    // }
 
     if (result.status === true) {
       const savedCnrDetails = new cnrDetailsCollection({
         cnrNumber: result.cnr_number,
         cnrDetails: result,
-        userID: userID,
+        userIDs: [userID],
       });
       await savedCnrDetails.save();
 
@@ -82,6 +71,7 @@ crawlerRoute.post("/crawler/caseDetails", async (req, res) => {
       const isCnrNumberFound = await cnrDetailsCollection.findOne({
         cnrNumber: cnr_number,
       });
+      // cnrDetailsCollection
 
       console.log("------isCnrNumberFound:", isCnrNumberFound)
 
@@ -93,6 +83,7 @@ crawlerRoute.post("/crawler/caseDetails", async (req, res) => {
         if (!unsavedCnrExists) {
           const saveUnsavedCnrNumber = new UnsaveCnrCollection({
             cnrNumber: cnr_number,
+            userIDs: [userID]
           });
 
           await saveUnsavedCnrNumber.save();
@@ -102,6 +93,11 @@ crawlerRoute.post("/crawler/caseDetails", async (req, res) => {
             savedData: result,
           });
         } else {
+
+          if(!unsavedCnrExists.userIDs.includes(userID)){
+            unsavedCnrExists.userIDs.push(userID)
+            await unsavedCnrExists.save();
+          }
           return res.status(200).json({
             status: false,
             message: `CNR number already exists in unsaved collection: ${cnr_number}`,
@@ -114,6 +110,8 @@ crawlerRoute.post("/crawler/caseDetails", async (req, res) => {
         });
       }
     }
+  }
+
   } catch (err) {
     console.log("err::", err)
     res.status(500).json({ error: "An unexpected error occurred.",message:err.message });
