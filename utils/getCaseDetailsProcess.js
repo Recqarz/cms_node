@@ -1,4 +1,3 @@
-const express = require("express");
 const puppeteer = require("puppeteer");
 const sharp = require("sharp");
 const tesseract = require("tesseract.js");
@@ -158,14 +157,29 @@ function delay(time) {
 
 
 const getCaseDetailsProcess = async (cnrNumber) => {
-  const browser = await puppeteer.launch({
-    headless: false, // for deploy
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  let browser; 
 
-  const page = await browser.newPage();
   try {
-    await page.goto("https://services.ecourts.gov.in/ecourtindia_v6/");
+
+    browser=await puppeteer.launch({
+      headless: true, // for deploy
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage", // Prevents issues in limited memory environments
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu", // Optional, if no GPU is available
+      ],
+    });
+
+    const page = await browser.newPage();
+
+    // Set a higher navigation timeout for slower network environments
+    page.setDefaultNavigationTimeout(60000);
+
+    await page.goto("https://services.ecourts.gov.in/ecourtindia_v6/",{
+      waitUntil: "load"
+  });
 
     await page.type("#cino", cnrNumber);
 
