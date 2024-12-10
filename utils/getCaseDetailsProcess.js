@@ -155,20 +155,62 @@ function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
+const extractTableDataCase2 = async (page, tableSelector) => {
+  try {
+    // Wait for the table element to appear on the page
+    const table = await retryWithDelay(async () => {
+      await page.waitForSelector(tableSelector, { timeout: 10000 });
+      return await page.$(tableSelector);
+    }).catch(() => null);
+
+    // If table isn't found, return an empty object
+    if (!table) {
+      return {};
+    }
+
+    // Extract data from the table
+    const data = {};
+    const rows = await page.evaluate((tableSelector) => {
+      const table = document.querySelector(tableSelector);
+      return Array.from(table.querySelectorAll("tr")).map((row) => {
+        const cells = Array.from(row.querySelectorAll("th, td"));
+        return cells.map((cell) => cell.innerText.trim());
+      });
+    }, tableSelector);
+
+    // Populate the data object with key-value pairs
+    rows.forEach((row) => {
+      if (row.length === 2) {
+        const key = row[0]; // Header
+        const value = row[1]; // Corresponding value
+        data[key] = value;
+      }
+    });
+
+    return data; // Return the populated object
+  } catch (error) {
+    console.error("Error extracting table data:", error);
+    return {};
+  }
+};
+
 
 const getCaseDetailsProcess = async (cnrNumber) => {
   let browser; 
 
   try {
-
+    const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'puppeteer-profile-'));
     browser=await puppeteer.launch({
-      headless: true, // for deploy
+      headless: false, // for deploy
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage", // Prevents issues in limited memory environments
         "--disable-accelerated-2d-canvas",
         "--disable-gpu", // Optional, if no GPU is available
+        "--disable-blink-features=AutomationControlled",
+        `--user-data-dir=${userDataDir}`,
+        "--incognito",
       ],
     });
 
@@ -261,6 +303,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
           }
         }
       } else {
+        await delay(3000);
         const tableSelector = "table.table";
         await page.waitForSelector(tableSelector, { timeout: 5000 });
 

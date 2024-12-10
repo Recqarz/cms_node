@@ -10,6 +10,10 @@ app.use(bodyParser.json());
 
 app.use("/api", crawlerRoute)
 
+app.get('/api', (req, res) => {
+    res.send('Hello World!');
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
