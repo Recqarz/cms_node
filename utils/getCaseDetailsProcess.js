@@ -3,7 +3,7 @@ const sharp = require("sharp");
 const tesseract = require("tesseract.js");
 const path = require("path");
 const fs = require("fs");
-
+const os = require('os');
 const https = require("https");
 const { URL } = require("url");
 const {uploadFileToS3} = require("./s2")
