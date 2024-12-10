@@ -360,6 +360,11 @@ const getCaseDetailsProcess = async (cnrNumber) => {
         return { status: false, message: "Case Details table not found." };
       }
 
+      await delay(1000);
+      const title = await page.evaluate(() => {
+        const heading = document.querySelector('h2#chHeading');
+        return heading ? heading.textContent.trim() : "Not Available";
+      });
       const acts = await extractTableData(page, "table.acts_table", false, false);
       const caseHistory = await extractTableData(page, "table.history_table", false, false);
       const caseStatus = await extractTableData(page, "table.case_status_table", false, false);
@@ -489,6 +494,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
 
       const res = {
         status: true,
+        "CourtPlace": title,
         Acts: acts,
         "Case Details": details,
         "Case History": caseHistory,
