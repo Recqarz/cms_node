@@ -31,9 +31,7 @@ async function processCaptcha() {
   while (attempts > 0) {
     try {
       // console.log("Processing captcha...");
-      const { data: { text } } = await tesseract.recognize("captcha.png", "eng", {
-        logger: (m) => console.log(m),
-      });
+      const { data: { text } } = await tesseract.recognize("captcha.png", "eng");
 
       captchaText = text.trim();
 
@@ -44,7 +42,7 @@ async function processCaptcha() {
         // console.log("Captcha text is empty. Retrying...");
       }
     } catch (error) {
-      console.error("Error processing captcha:", error);
+      // console.error("Error processing captcha:", error);
     }
     attempts--;
     if (attempts > 0) {
@@ -197,7 +195,6 @@ const extractTableDataCase2 = async (page, tableSelector) => {
 
 // Utility function to launch Puppeteer with Linux-specific configurations
 const launchBrowser = async (headless = true) => {
-  const puppeteer = require("puppeteer");
   let executablePath;
 
   if (process.platform === "win32") {
@@ -206,7 +203,7 @@ const launchBrowser = async (headless = true) => {
     executablePath = "/usr/bin/google-chrome"; // Adjust if using Chromium
 
     // Start Xvfb for headless environments
-    const { exec } = require("child_process");
+    // const { exec } = require("child_process");
     exec("Xvfb :99 -screen 0 1280x720x24 &", (err) => {
       if (err) {
         console.error("Error starting Xvfb:", err);
@@ -231,6 +228,8 @@ const launchBrowser = async (headless = true) => {
       "--disable-extensions",
       "--disable-popup-blocking",
       "--disable-dev-shm-usage",
+       '--headless',  // Ensure headless mode is enforced
+
     ],
   });
 };
