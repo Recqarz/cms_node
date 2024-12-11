@@ -195,24 +195,67 @@ const extractTableDataCase2 = async (page, tableSelector) => {
 };
 
 
+// Utility function to launch Puppeteer with Linux-specific configurations
+const launchBrowser = async (headless = true) => {
+  const puppeteer = require("puppeteer");
+  let executablePath;
+
+  if (process.platform === "win32") {
+    executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+  } else if (process.platform === "linux") {
+    executablePath = "/usr/bin/google-chrome"; // Adjust if using Chromium
+
+    // Start Xvfb for headless environments
+    const { exec } = require("child_process");
+    exec("Xvfb :99 -screen 0 1280x720x24 &", (err) => {
+      if (err) {
+        console.error("Error starting Xvfb:", err);
+      }
+    });
+
+    // Ensure DISPLAY environment variable is set
+    process.env.DISPLAY = process.env.DISPLAY || ":99";
+  } else if (process.platform === "darwin") {
+    executablePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  } else {
+    throw new Error("Unsupported operating system");
+  }
+  return puppeteer.launch({
+    headless,
+    executablePath,
+    // userDataDir,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-gpu",
+      "--disable-extensions",
+      "--disable-popup-blocking",
+      "--disable-dev-shm-usage",
+    ],
+  });
+};
+
+
 const getCaseDetailsProcess = async (cnrNumber) => {
   let browser; 
 
   try {
     const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'puppeteer-profile-'));
-    browser=await puppeteer.launch({
-      headless: false, // for deploy
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage", // Prevents issues in limited memory environments
-        "--disable-accelerated-2d-canvas",
-        "--disable-gpu", // Optional, if no GPU is available
-        "--disable-blink-features=AutomationControlled",
-        `--user-data-dir=${userDataDir}`,
-        "--incognito",
-      ],
-    });
+    // browser=await puppeteer.launch({
+    //   headless: false, // for deploy
+    //   args: [
+    //     "--no-sandbox",
+    //     "--disable-setuid-sandbox",
+    //     "--disable-dev-shm-usage", // Prevents issues in limited memory environments
+    //     "--disable-accelerated-2d-canvas",
+    //     "--disable-gpu", // Optional, if no GPU is available
+    //     "--disable-blink-features=AutomationControlled",
+    //     `--user-data-dir=${userDataDir}`,
+    //     "--incognito",
+    //   ],
+    // });
+
+    browser = await launchBrowser(false);
 
     const page = await browser.newPage();
 
