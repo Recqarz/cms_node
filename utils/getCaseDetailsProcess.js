@@ -30,7 +30,7 @@ async function processCaptcha() {
   let captchaText = "";
   while (attempts > 0) {
     try {
-      console.log("Processing captcha...");
+      // console.log("Processing captcha...");
       const { data: { text } } = await tesseract.recognize("captcha.png", "eng", {
         logger: (m) => console.log(m),
       });
@@ -38,17 +38,17 @@ async function processCaptcha() {
       captchaText = text.trim();
 
       if (captchaText) {
-        console.log(`Captcha text: ${captchaText}`);
+        // console.log(`Captcha text: ${captchaText}`);
         return captchaText;
       } else {
-        console.log("Captcha text is empty. Retrying...");
+        // console.log("Captcha text is empty. Retrying...");
       }
     } catch (error) {
       console.error("Error processing captcha:", error);
     }
     attempts--;
     if (attempts > 0) {
-      console.log(`Retrying captcha... (${8 - attempts} attempt(s) left)`);
+      // console.log(`Retrying captcha... (${8 - attempts} attempt(s) left)`);
     } else {
       console.error("Failed to process captcha after multiple attempts.");
     }
@@ -236,13 +236,13 @@ const getCaseDetailsProcess = async (cnrNumber) => {
       return {status: false, message: "Wrong CRN number. Please check the CRN and try again." }
     }
 
-    console.log("Waiting for captcha to load...");
+    // console.log("Waiting for captcha to load...");
     await delay(2000); // Wait for 2 seconds
 
     const captchaImage = await page.$("#captcha_image");
     if (captchaImage) {
       await captchaImage.screenshot({ path: "captcha.png" });
-      console.log("Captcha image captured.");
+      // console.log("Captcha image captured.");
     } else {
       console.error("Captcha image element not found.");
       return { status: false, message: "Captcha image element not found" };
@@ -255,13 +255,13 @@ const getCaseDetailsProcess = async (cnrNumber) => {
       return { status: false, message: "Failed to process captcha. Exiting." };
     }
 
-    console.log(`Captcha text processed: ${captchaText}`);
+    // console.log(`Captcha text processed: ${captchaText}`);
 
     await page.type("#fcaptcha_code", captchaText);
-    console.log(`Filled captcha code: ${captchaText}`);
+    // console.log(`Filled captcha code: ${captchaText}`);
 
     if (captchaText) {
-      console.log("Waiting for the search button...");
+      // console.log("Waiting for the search button...");
       await page.waitForSelector("#searchbtn", { timeout: 30000 });
       await page.click("#searchbtn");
       const details = {};
@@ -374,7 +374,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
       const respondentAdvocate = await extractTableData(page, "table.Respondent_Advocate_table", false, true);
 
 
-      console.log("Links for order table to load...");
+      // console.log("Links for order table to load...");
       try {
         await page.waitForSelector(".order_table", { timeout: 10000 }); // 10 sec for order sheet
       } catch (err) {
@@ -389,7 +389,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
 
       if (rows.length <= 1){
         // LinkArr.push("Order Sheet not found !")
-        console.log("No orders found for the provided CNR number")
+        // console.log("No orders found for the provided CNR number")
       }
         // throw new Error("No orders found for the provided CNR number.");
   
@@ -401,9 +401,9 @@ const getCaseDetailsProcess = async (cnrNumber) => {
       const existingFiles = getExistingOrderFiles(cnrDirectory);
   
       if (cnrExists && existingFiles.length === rows.length - 1) {
-        console.log(
-          `CNR number '${cnrNumber}' already exists with all order files.`
-        );
+        // console.log(
+        //   `CNR number '${cnrNumber}' already exists with all order files.`
+        // );
         // return true;
       }
   
@@ -414,7 +414,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
         let orderNumber = row[0] || `${i}`;
         let orderDate = row[1] || "Unknown_Date";
   
-        console.log("Processing order:", orderNumber);
+        // console.log("Processing order:", orderNumber);
         await delay(5000); // Wait to ensure page is loaded
   
         const orderLink = await page.$(
@@ -422,11 +422,11 @@ const getCaseDetailsProcess = async (cnrNumber) => {
         );
   
         if (orderLink) {
-          console.log(`Clicking on order link for order ${orderNumber}`);
+          // console.log(`Clicking on order link for order ${orderNumber}`);
           await orderLink.click();
   
           try {
-            console.log("Waiting for order modal...");
+            // console.log("Waiting for order modal...");
             await page.waitForSelector("#modal_order_body", { timeout: 30000 });
             await delay(3000);
             const pdfLink = await page.$eval("#modal_order_body object", (obj) =>
@@ -439,7 +439,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
                     pdfLink,
                     "https://services.ecourts.gov.in/ecourtindia_v6/"
                   ).href;
-              console.log(`Full PDF link: ${fullPdfLink}`);
+              // console.log(`Full PDF link: ${fullPdfLink}`);
   
               // Define path for saving the downloaded PDF
               const sanitizedOrderNumber = orderNumber.replace(/[^\w\-_.]/g, "_");
@@ -455,9 +455,9 @@ const getCaseDetailsProcess = async (cnrNumber) => {
   
               // Download the PDF file
               try {
-                console.log(`Downloading PDF for order ${orderNumber}...`);
+                // console.log(`Downloading PDF for order ${orderNumber}...`);
                 await downloadPdf(fullPdfLink, pdfPath, cookies);
-                console.log(`Downloaded order to ${pdfPath}`);
+                // console.log(`Downloaded order to ${pdfPath}`);
   
                 // Upload the downloaded PDF to S3
                 const s3Response = await uploadFileToS3(
@@ -465,12 +465,12 @@ const getCaseDetailsProcess = async (cnrNumber) => {
                   path.basename(pdfPath)
                 );
                 LinkArr.push(s3Response.Location);
-                console.log(`File uploaded to S3: ${s3Response.Location}`);
+                // console.log(`File uploaded to S3: ${s3Response.Location}`);
               } catch (downloadError) {
-                console.error(
-                  `Error downloading PDF for order ${orderNumber}:`,
-                  downloadError
-                );
+                // console.error(
+                //   `Error downloading PDF for order ${orderNumber}:`,
+                //   downloadError
+                // );
               }
   
               await page.waitForSelector(".modal.fade.show", { visible: true });
