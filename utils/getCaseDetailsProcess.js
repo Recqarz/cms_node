@@ -203,7 +203,7 @@ const launchBrowser = async (headless = true) => {
     executablePath = "/usr/bin/google-chrome"; // Adjust if using Chromium
 
     // Start Xvfb for headless environments
-    // const { exec } = require("child_process");
+    const { exec } = require("child_process");
     exec("Xvfb :99 -screen 0 1280x720x24 &", (err) => {
       if (err) {
         console.error("Error starting Xvfb:", err);
