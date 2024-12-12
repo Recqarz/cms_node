@@ -7,9 +7,7 @@ crawlerRoute.post("/standard/ecourt", async (req, res) => {
   const { cnr_number } = req.body;
 
   if (!cnr_number || !/^[A-Za-z0-9]{16}$/.test(cnr_number)) {
-    return res.status(400).json({
-      error: "Invalid CNR number. It must be 16 alphanumeric characters long.",
-    });
+    return res.status(400).json({ status: false, message:"invalidCnr",cnr_number: cnr_number});
   }
 
   try {

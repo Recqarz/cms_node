@@ -322,6 +322,17 @@ const getCaseDetailsProcess = async (cnrNumber) => {
         return { status: false, message: "Invalid Captcha" };
       }
 
+      await delay(2000);
+      const caseCodeMessage = await page.evaluate(() => {
+        const historyCnr = document.querySelector('#history_cnr');
+        return historyCnr ? historyCnr.textContent.trim() : null;
+      });
+  
+      // Check if the case code message indicates non-existence
+      if (caseCodeMessage && caseCodeMessage.includes("This Case Code does not exists")) {
+        return { status: false, message: "doesNotExists",cnr_number: cnrNumber};
+      }
+
       const caseDetailsTable = await retryWithDelay(async () => {
         await page.waitForSelector("table.case_details_table", { timeout: 6000 });
         return await page.$("table.case_details_table");
@@ -420,7 +431,7 @@ const getCaseDetailsProcess = async (cnrNumber) => {
       try {
         await page.waitForSelector(".order_table", { timeout: 10000 }); // 10 sec for order sheet
       } catch (err) {
-        console.error("Error: Timeout waiting for order table", err);
+        // console.error("Error: Timeout waiting for order table", err);
         await page.screenshot({ path: "error_screenshot.png" });
         // LinkArr.push("Order Sheet not found !")
       }
